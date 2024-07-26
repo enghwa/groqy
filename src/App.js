@@ -18,7 +18,7 @@ function GroqApp() {
 
   const [streamingOutput, setStreamingOutput] = useState('');
   const hf = new HfInference(); //
-  hf.endpoint("http://k8s-default-llmservi-acc37bdb07-2ef20c7b8a7f397e.elb.ap-northeast-1.amazonaws.com/v1/chat/completions")
+  hf.endpoint("")
   // const model = hf.endpoint(apiUrl("/v1/chat/completions"));
 
   useEffect(() => {
@@ -164,7 +164,7 @@ function GroqApp() {
 
     try {
       for await (const chunk of hf.chatCompletionStream({
-        endpointUrl: "http://k8s-default-llmservi-acc37bdb07-2ef20c7b8a7f397e.elb.ap-northeast-1.amazonaws.com",
+        endpointUrl: ""https://groqapi.bababababanana.com",
         messages: [{ role: "user", content: textInput }], // Send user input
         max_tokens: 500,
         temperature: 0.1,
