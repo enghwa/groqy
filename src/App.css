@@ -106,6 +106,7 @@ button {
   background-color: #f0544f;
   color: white;
   align-self: flex-start; 
+  font-family: 'Tiempos', serif; /* Apply Tiempos font */
 }
 .user-message {
   background-color: #e9ecef; 
