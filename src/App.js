@@ -230,6 +230,21 @@ function GroqApp() {
 
   return (
     <div className="app-container">
+
+      <div className="message-area">
+      {messages.map((message, index) => (
+        <div 
+          key={index} 
+          className={`message ${message.isUser ? 'user-bubble' : 'llm-bubble'}`}
+        >
+          {message.isUser 
+            ? message.text // Direct text for user messages
+            : <ReactMarkdown>{message.text}</ReactMarkdown> // Markdown for LLM
+          }
+        </div>
+      ))}
+      </div>
+
       <div className="input-area">
       <div className="input-container">
           <div className="recording-controls">
@@ -267,37 +282,7 @@ function GroqApp() {
         </div>
       </div>
 
-      <div className="message-area">
-      {messages.map((message, index) => (
-        <div 
-          key={index} 
-          className={`message ${message.isUser ? 'user-bubble' : 'llm-bubble'}`}
-        >
-          {message.isUser 
-            ? message.text // Direct text for user messages
-            : <ReactMarkdown>{message.text}</ReactMarkdown> // Markdown for LLM
-          }
-        </div>
-      ))}
-    </div>
-
-      <div className="extra-options">
-        <button>
-          <span role="img" aria-label="Square">
-            ⏹️
-          </span>
-        </button>
-        <button>
-          <span role="img" aria-label="Right Arrow">
-            ➡️
-          </span>
-        </button>
-        <button>
-          <span role="img" aria-label="Lines">
-            ☰
-          </span>
-        </button>
-      </div>
+   
     </div>
   );
 }
