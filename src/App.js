@@ -164,7 +164,7 @@ function GroqApp() {
 
     try {
       for await (const chunk of hf.chatCompletionStream({
-        endpointUrl: ""https://groqapi.bababababanana.com",
+        endpointUrl: "https://groqapi.bababababanana.com",
         messages: [{ role: "user", content: textInput }], // Send user input
         max_tokens: 500,
         temperature: 0.1,
