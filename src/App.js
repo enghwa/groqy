@@ -18,8 +18,9 @@ function GroqApp() {
 
   const [streamingOutput, setStreamingOutput] = useState('');
   const hf = new HfInference(); //
-  hf.endpoint("")
+  hf.endpoint("https://groqapi.bababababanana.com")
   // const model = hf.endpoint(apiUrl("/v1/chat/completions"));
+
 
   useEffect(() => {
     return () => {
@@ -31,6 +32,12 @@ function GroqApp() {
   const handleClearChat = () => {
     setMessages([]); // Clear the messages array
     setStreamingOutput(''); // Clear any ongoing streaming output
+  };
+
+  const formatTime = (seconds) => {
+    const minutes = Math.floor(seconds / 60);
+    const remainingSeconds = seconds % 60;
+    return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
   const startListening = () => {
@@ -47,9 +54,10 @@ function GroqApp() {
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        setTextInput(transcript);
-        console.log('Transcript:', transcript);
+        console.log('Voice Input Transcript:', transcript);
+        sendToLLM(transcript); // Send voice input directly to LLM
       };
+
 
       recognition.onend = () => {
         stopListening();
@@ -67,11 +75,12 @@ function GroqApp() {
     stopRecordingTimer();
     stopAudioVisualization();
 
-     // Send the request to the LLM when recording stops
-     if (textInput.trim() !== '') {
-      handleSend(); 
+    // Send the request to the LLM when recording stops
+    if (textInput.trim() !== '') {
+      console.log("stopped")
+      handleSend();
     }
-    
+
   };
 
   const startRecordingTimer = () => {
@@ -149,61 +158,99 @@ function GroqApp() {
     }
   };
 
-  const handleSend = async () => {
-    if (textInput.trim() === '') return;
+  const handleInputChange = (e) => {
+    setTextInput(e.target.value);
+  };
+
+  const handleSend = () => {
+    console.log('Keyboard Input:', textInput);
+    sendToLLM(textInput);
+    setTextInput(''); // Clear input box after sending
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      handleSend();
+    }
+  };
+
+
+  const sendToLLM = async (text) => {
+    //   console.log("sendtoLLM.....", text)
 
     const newMessage = {
-      text: textInput,
-      isUser: true
+      text: text,
+      isUser: true 
     };
 
     setMessages(prevMessages => [...prevMessages, newMessage]);
-    setTextInput('');
-    setStreamingOutput(''); // Clear previous output
-
 
     try {
+      // Create a placeholder for the LLM's response
+      const responseMessageId = `llm-response-${messages.length}`;
+      setMessages(prevMessages => [
+        ...prevMessages,
+        { 
+          id: responseMessageId,
+          text: '', // Initially empty
+          isUser: false 
+        },
+      ]);
+
       for await (const chunk of hf.chatCompletionStream({
         endpointUrl: "https://groqapi.bababababanana.com",
-        messages: [{ role: "user", content: textInput }], // Send user input
+        messages: [{ role: 'user', content: text }],
         max_tokens: 500,
         temperature: 0.1,
         seed: 0,
       })) {
         if (chunk.choices && chunk.choices.length > 0) {
-          setStreamingOutput(prevOutput =>
-            prevOutput + (chunk.choices[0].delta.content || '')
-          );
+          setMessages(prevMessages => {
+            // Find the LLM response message and update its text
+            const updatedMessages = prevMessages.map(message => {
+              if (message.id === responseMessageId) {
+                return {
+                  ...message,
+                  text: message.text + (chunk.choices[0].delta.content || '')
+                };
+              }
+              return message;
+            });
+            return updatedMessages;
+          });
         }
       }
     } catch (error) {
       console.error('Error with LLM API:', error);
-      // Handle the error appropriately (e.g., display an error message)
+      // Consider setting an error message in the messages array
     }
   };
+
 
 
   return (
     <div className="app-container">
       <div className="input-area">
-        <div className="input-container">
-          <button onClick={isListening ? stopListening : startListening}>
-            <div className={`microphone-icon ${isListening ? 'recording' : ''}`}>
-              🎤
-            </div>
-            {isListening && <span className="recording-time">{recordingTime}</span>}
-          </button>
-
-          {/* Canvas for Audio Visualization (moved outside the button) */}
-          {/* Conditionally render the canvas */}
-          {isListening && (
-            <canvas id="analyzer" height="50"></canvas>
-          )}
+      <div className="input-container">
+          <div className="recording-controls">
+            <button onClick={isListening ? stopListening : startListening}>
+              <div
+                className={`microphone-icon ${isListening ? 'recording' : ''}`}
+              >
+                🎤
+              </div>
+            </button>
+            {isListening && (
+              <span className="recording-time">{formatTime(recordingTime)}</span>
+            )}
+            {isListening && <canvas id="analyzer" height="40"></canvas>}
+          </div>
 
           <input
             type="text"
             value={textInput}
-            onChange={(e) => setTextInput(e.target.value)}
+            onChange={handleInputChange} 
+            onKeyDown={handleKeyDown} 
             placeholder="Try it"
           />
           <button onClick={handleSend}>
@@ -215,19 +262,24 @@ function GroqApp() {
         <div className="options">
           <span onClick={handleClearChat} style={{ cursor: 'pointer' }}> {/* Make it clickable */}
             Clear chat
-          </span>  
-          
+          </span>
+
         </div>
       </div>
 
       <div className="message-area">
-        {/* ... (map through messages) */}
-        {/* <div className="message bot-message">{streamingOutput}</div> */}
-        {/* <div className="message bot-message" dangerouslySetInnerHTML={{ innerHTML: Marked(streamingOutput) }} />  */}
-        <div className="message bot-message">
-          <ReactMarkdown>{streamingOutput}</ReactMarkdown>
+      {messages.map((message, index) => (
+        <div 
+          key={index} 
+          className={`message ${message.isUser ? 'user-bubble' : 'llm-bubble'}`}
+        >
+          {message.isUser 
+            ? message.text // Direct text for user messages
+            : <ReactMarkdown>{message.text}</ReactMarkdown> // Markdown for LLM
+          }
         </div>
-      </div>
+      ))}
+    </div>
 
       <div className="extra-options">
         <button>
