@@ -231,6 +231,7 @@ function GroqApp() {
   return (
     <div className="app-container">
 
+  <div className="chat-area"> {/* Combined chat area */}
       <div className="message-area">
       {messages.map((message, index) => (
         <div 
@@ -245,7 +246,7 @@ function GroqApp() {
       ))}
       </div>
 
-      <div className="input-area">
+      <div className="input-area"> {/* Input area inside chat-area */}
       <div className="input-container">
           <div className="recording-controls">
             <button onClick={isListening ? stopListening : startListening}>
@@ -273,15 +274,16 @@ function GroqApp() {
               ✈️
             </span>
           </button>
+
         </div>
         <div className="options">
           <span onClick={handleClearChat} style={{ cursor: 'pointer' }}> {/* Make it clickable */}
             Clear chat
           </span>
 
-        </div>
       </div>
-
+      </div>
+      </div>
    
     </div>
   );
