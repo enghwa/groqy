@@ -10,6 +10,8 @@ function GroqApp() {
   const [isListening, setIsListening] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recognitionInstance, setRecognitionInstance] = useState(null);
+  const [contextMessages, setContextMessages] = useState([]);
+  const MAX_CONTEXT_MESSAGES = 45; // Adjust this number as needed
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -193,12 +195,13 @@ function GroqApp() {
     };
 
     if (text.trim() === '') {
-      console.log ("nothing to do.")
+      console.log("nothing to do.")
       return
     }
 
-
+    // Update messages and context
     setMessages(prevMessages => [...prevMessages, newMessage]);
+    updateContext(newMessage);
 
     try {
       const responseMessageId = `llm-response-${messages.length}`;
@@ -211,12 +214,19 @@ function GroqApp() {
         },
       ]);
 
+      // Prepare the context for the LLM request
+      const llmContext = [
+        {role: 'system', content: 'This is a conversation between Bobby, a friendly chatbot. Bobby is helpful, kind and honest. You must keep response below 200 words or less. Summarize long responses and ask for followup questions.'},
+        ...contextMessages.map(msg => ({
+          role: msg.isUser ? 'user' : 'assistant',
+          content: msg.text
+        })),
+        { role: 'user', content: text }
+      ];
+
       for await (const chunk of hf.chatCompletionStream({
         endpointUrl: "https://groqapi.bababababanana.com",
-        messages: [
-            {role: 'system', content: 'This is a conversation between Bobby, a friendly chatbot. Bobby is helpful, kind and honest. You must keep response below 200 words or less. Summarize long responses  and ask for followup questions.'},
-            { role: 'user', content: text }
-        ],
+        messages: llmContext,
         max_tokens: 1500,
         temperature: 0.1,
         seed: 0,
@@ -236,9 +246,27 @@ function GroqApp() {
           });
         }
       }
+
+      // Update context with the LLM's response
+      setMessages(prevMessages => {
+        const lastMessage = prevMessages[prevMessages.length - 1];
+        updateContext(lastMessage);
+        return prevMessages;
+      });
+
     } catch (error) {
       console.error('Error with LLM API:', error);
     }
+  };
+
+  const updateContext = (newMessage) => {
+    setContextMessages(prevContext => {
+      const updatedContext = [...prevContext, newMessage];
+      if (updatedContext.length > MAX_CONTEXT_MESSAGES) {
+        return updatedContext.slice(-MAX_CONTEXT_MESSAGES);
+      }
+      return updatedContext;
+    });
   };
 
   return (
