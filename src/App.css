@@ -13,19 +13,25 @@
   display: flex;
   flex-direction: column;
   /* flex: 1;  */
-  height: 100vh; /* Make chat area take full viewport height */
+  height: 80vh; /* Make chat area take full viewport height */
   overflow-y: hidden; /* Prevent chat area scrolling */
 }
 
 .fixed-input-area {
   position: absolute; /* Position relative to parent (chat-area) */
   bottom: 0;
-  left: 0;
-  width: 100%;
+  /* left: 0; */
+  /* width: 80%; */
   padding: 10px;
   border-top: 1px solid #eee; 
   background-color: #fff; /* Make sure the input area has a background color */
   z-index: 1;  /* Make sure it stays on top of the chat area */
+  border: 1px solid rgba(0, 0, 0, 0.1); /* Light border */
+  border-radius: 20px; /* Rounded corners */
+  display: flex; /* Use flexbox for centering */
+  justify-content: center; /* Center content horizontally */
+  align-items: center; /* Center content vertically (optional if needed) */
+  width: 60%; /* Make sure it takes full width */
 }
 
 .message-area {
@@ -44,14 +50,46 @@
   bottom: 0; 
   width: 100%; 
 }
+
 .input-container {
   display: flex;
   align-items: center;
   padding: 10px;
-  border-radius: 30px;
-  background-color: white;
-  margin-bottom: 10px; 
+  background-color: #fff; /* White background */
+  width: 100%;
+  border-radius: 20px; /* Rounded corners */
 }
+
+.input-field {
+  display: flex;
+  align-items: center;
+  width: 100%; 
+  padding: 8px 12px; /* Adjusted padding */
+  border-radius: 20px; /* Rounded corners */
+}
+
+input[type='text'] {
+  flex: 1; 
+  border: none;
+  padding: 8px;
+  font-size: 1em;
+  border-radius: 15px; /* Rounded corners */
+}
+
+.microphone-button, .send-button {
+  background: none;
+  border: none;
+  padding: 0; 
+  cursor: pointer;
+  margin: 0 10px; /* Adjust spacing as needed */
+}
+
+.microphone-button svg, .send-button svg {
+  width: 24px;
+  height: 24px;
+  fill: #777; /* Grey color for icons */
+}
+
 
 .recording-controls { 
   display: flex;

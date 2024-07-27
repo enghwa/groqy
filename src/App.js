@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { HfInference } from '@huggingface/inference';
-import ReactMarkdown from 'react-markdown'; 
+import ReactMarkdown from 'react-markdown';
 
 function GroqApp() {
   const [textInput, setTextInput] = useState('');
@@ -16,14 +16,14 @@ function GroqApp() {
   const recordingTimeRef = useRef(null);
 
   const [streamingOutput, setStreamingOutput] = useState('');
-  const hf = new HfInference(); 
+  const hf = new HfInference();
   hf.endpoint("https://groqapi.bababababanana.com");
 
 
   const messageAreaRef = useRef(null);
   const chatAreaRef = useRef(null);
 
-  
+
   useEffect(() => {
     // Scroll to the bottom whenever messages update
     if (messageAreaRef.current) {
@@ -64,7 +64,7 @@ function GroqApp() {
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         console.log('Voice Input Transcript:', transcript);
-        sendToLLM(transcript); 
+        sendToLLM(transcript);
       };
 
       recognition.onend = () => {
@@ -126,7 +126,7 @@ function GroqApp() {
 
     analyserRef.current.getByteTimeDomainData(dataArray);
 
-    ctx.clearRect(0, 0, WIDTH, HEIGHT); 
+    ctx.clearRect(0, 0, WIDTH, HEIGHT);
     ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -170,7 +170,7 @@ function GroqApp() {
   const handleSend = () => {
     console.log('Keyboard Input:', textInput);
     sendToLLM(textInput);
-    setTextInput(''); 
+    setTextInput('');
   };
 
   const handleKeyDown = (e) => {
@@ -182,8 +182,14 @@ function GroqApp() {
   const sendToLLM = async (text) => {
     const newMessage = {
       text: text,
-      isUser: true 
+      isUser: true
     };
+
+    if (text.trim() === '') {
+      console.log ("nothing to do.")
+      return
+    }
+
 
     setMessages(prevMessages => [...prevMessages, newMessage]);
 
@@ -191,10 +197,10 @@ function GroqApp() {
       const responseMessageId = `llm-response-${messages.length}`;
       setMessages(prevMessages => [
         ...prevMessages,
-        { 
+        {
           id: responseMessageId,
-          text: '', 
-          isUser: false 
+          text: '',
+          isUser: false
         },
       ]);
 
@@ -227,37 +233,33 @@ function GroqApp() {
 
   return (
     <div className="app-container">
-       <div className="chat-area" ref={chatAreaRef}> 
-      <div className="message-area" ref={messageAreaRef}>
+      <div className="chat-area" ref={chatAreaRef}>
+      
+        <div className="message-area" ref={messageAreaRef}>
           {messages.map((message, index) => (
-            <div 
-              key={index} 
+            <div
+              key={index}
               className={`message ${message.isUser ? 'user-bubble' : 'llm-bubble'}`}
             >
-              {message.isUser 
-                ? message.text 
-                : <ReactMarkdown>{message.text}</ReactMarkdown> 
+              {message.isUser
+                ? message.text
+                : <ReactMarkdown>{message.text}</ReactMarkdown>
               }
             </div>
           ))}
         </div>
 
-      {/* Fixed Input Area */}
-    <div className="fixed-input-area"> 
+        {/* Fixed Input Area */}
+        <div className="fixed-input-area">
           <div className="input-container">
             <div className="recording-controls">
-              <button onClick={isListening ? stopListening : startListening}>
-                {/* <div
-                  className={`microphone-icon ${isListening ? 'recording' : ''}`}
-                >
-                  🎤
-                </div> */}
-                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-mic">
-              <path d="M12 1 3 18a9 9 0 0 0 9 9v1h1v-1a9 9 0 0 0 9-9 9 9 0 0 0-9-9z" />
-              <line x1="12" y1="19" x2="12" y2="23" />
-              <line x1="8" y1="23" x2="16" y2="23" />
+            <button onClick={isListening ? stopListening : startListening} className="microphone-button">
+            <svg fill="#000000" width="800px" height="800px" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg"  className="feather feather-mic">
+              <path d="M128,172a52.059,52.059,0,0,0,52-52V64A52,52,0,0,0,76,64v56A52.059,52.059,0,0,0,128,172ZM100,64a28,28,0,0,1,56,0v56a28,28,0,0,1-56,0Zm40,147.21753V232a12,12,0,0,1-24,0V211.21753A92.13808,92.13808,0,0,1,36,120a12,12,0,0,1,24,0,68,68,0,0,0,136,0,12,12,0,0,1,24,0A92.13808,92.13808,0,0,1,140,211.21753Z"/>
             </svg>
-              </button>
+          </button>
+          
+
               {isListening && (
                 <span className="recording-time">{formatTime(recordingTime)}</span>
               )}
@@ -267,22 +269,29 @@ function GroqApp() {
             <input
               type="text"
               value={textInput}
-              onChange={handleInputChange} 
-              onKeyDown={handleKeyDown} 
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
               placeholder="Try it"
             />
-            <button onClick={handleSend}>
-              <span role="img" aria-label="Send">
-                ✈️
-              </span>
-            </button>
+            <button onClick={handleSend} className="send-button">
+            
+            <svg aria-label="send" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" 
+             className="feather feather-send"><path d="M120-160v-240l320-80-320-80v-240l760 320-760 320Z"></path>
+            </svg>
+
+          </button>
+
           </div>
+          
           <div className="options">
-            <span onClick={handleClearChat} style={{ cursor: 'pointer' }}> 
-              Clear chat
-            </span>
-          </div>
+          <span onClick={handleClearChat} style={{ cursor: 'pointer' }}> 
+            Clear chat
+          </span>
         </div>
+
+        </div>
+      
+      
       </div>
     </div>
   );
