@@ -1,161 +1,58 @@
+/* App.css */
+
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 80vh; 
-  width: 600px; 
-  margin: 20px auto; 
+  height: 100vh; /* Full viewport height */
+  width: 100%; /* Full viewport width */
+  margin: 0; /* Remove default margins */
   font-family: sans-serif;
+  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);
   overflow-y: hidden; /* Prevent page scrolling */
-  /* box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);  */
 }
 
 .chat-area {
   display: flex;
-  flex-direction: column;
-  /* flex: 1;  */
-  height: 80vh; /* Make chat area take full viewport height */
+  flex-direction: column; 
+  height: 100vh; /* Full viewport height */
+  width: 100%; /* Full viewport width */
   overflow-y: hidden; /* Prevent chat area scrolling */
+}
+
+.message-area {
+  overflow-y: auto;
+  flex: 1; /* Allow message area to grow as needed */
+  padding: 20px;
+  display: flex;
+  flex-direction: column; /* Normal column direction */
 }
 
 .fixed-input-area {
   position: fixed;
   bottom: 0;
-  width: 100%; /* Set width to 100% */
-  
+  /* left: 20; */
+  width: 100%;
+  /* padding: 10px; */
   border-top: 1px solid #eee;
   background-color: #fff;
   z-index: 1;
   border: 1px solid rgba(0, 0, 0, 0.1);
   border-radius: 20px;
   display: flex;
-  max-width: 700px; /* Set a maximum width for larger screens */
-  justify-content: center; /* Center horizontally within the fixed-input-area */
-  align-items: center;
-}
-
-
-
-.message-area {
-  flex: 1; 
-  padding: 20px;
-  overflow-y: auto; 
-  height: calc(100vh - 50px); /* Account for input area height */
-  display: flex;
-  flex-direction: column; /* Normal column direction */
-}
-
-.input-area {
-  padding: 10px;
-  border-top: 1px solid #eee; 
-  position: relative; 
-  bottom: 0; 
-  width: 100%; 
-}
-
-.input-container {
-  display: flex;
-  align-items: center;
-  padding: 10px;
-  background-color: #fff; /* White background */
-  width: 100%;
-  border-radius: 20px; /* Rounded corners */
-}
-
-.input-field {
-  display: flex;
-  align-items: center;
-  width: 100%; 
-  padding: 8px 12px; /* Adjusted padding */
-  border-radius: 20px; /* Rounded corners */
-}
-
-input[type='text'] {
-  flex: 1; 
-  border: none;
-  padding: 8px;
-  font-size: 1em;
-  border-radius: 15px; /* Rounded corners */
-}
-
-.microphone-button, .send-button {
-  background: none;
-  border: none;
-  padding: 0; 
-  cursor: pointer;
-  margin: 0 10px; /* Adjust spacing as needed */
-}
-
-.microphone-button svg, .send-button svg {
-  width: 24px;
-  height: 24px;
-  fill: #777; /* Grey color for icons */
-}
-
-
-.recording-controls { 
-  display: flex;
-  align-items: center; 
-  margin-right: 10px; 
-}
-
-.microphone-icon {
-  width: 30px;
-  height: 30px;
-  border-radius: 50%;
-  background-color: #f0f8ff;
-  display: flex;
   justify-content: center;
   align-items: center;
-  font-size: 1.2em;
-  transition: background-color 0.3s ease;
+  max-width: 700px; /* Set a maximum width for larger screens */
+  /* margin: 0 auto; Center horizontally using margin */  
 }
 
-.microphone-icon.recording {
-  background-color: #f0544f; 
-}
 
-.recording-time {
-  margin-left: 5px; 
-  font-size: 14px; 
-  color: #f0544f;
-}
-
-input[type='text'] {
-  flex: 1; 
-  border: none;
-  padding: 8px;
-  font-size: 1em;
-}
-
-#analyzer {
-  width: 100px;
-  margin-left: 5px; 
-}
-
-button {
-  background: none;
-  border: none;
-  padding: 0; 
-  cursor: pointer;
-}
-
-.options {
-  display: flex;
-  justify-content: space-between; 
-  font-size: 0.8em; 
-  color: #777; 
-}
-
-.tokens-per-second {
-  font-weight: bold;
-  color: #f0544f; 
-}
-
+/* Styling for Messages (User and LLM) */
 .message {
-  margin-bottom: 10px; 
-  padding: 10px 15px; 
+  margin-bottom: 10px;
+  padding: 10px 15px;
   border-radius: 15px;
-  max-width: 80%; 
+  max-width: 80%;
+  word-wrap: break-word; /* Break long words */
 }
 
 .user-bubble {
@@ -169,9 +66,55 @@ button {
   align-self: flex-start; 
 }
 
-.extra-options {
+/* Styling for Input Area */
+.input-container {
   display: flex;
-  justify-content: space-around; 
+  align-items: center;
   padding: 10px;
-  border-top: 1px solid #eee;
+  background-color: #fff; 
+  width: 100%;
+  border-radius: 20px;
 }
+
+.input-field {
+  display: flex;
+  align-items: center;
+  width: 100%; 
+  padding: 8px 12px; 
+  border-radius: 20px;
+}
+
+input[type='text'] {
+  flex: 1; 
+  border: none;
+  padding: 8px;
+  font-size: 1em;
+  border-radius: 15px;
+}
+
+.microphone-button, .send-button {
+  background: none;
+  border: none;
+  padding: 0; 
+  cursor: pointer;
+  margin: 0 10px; 
+}
+
+.microphone-button svg, .send-button svg {
+  width: 24px;
+  height: 24px;
+  fill: #777;
+}
+
+/* Media Queries for Responsive Design */
+@media (max-width: 768px) { /* Adjust breakpoint as needed */
+  .message {
+    max-width: 90%; /* Make messages wider on smaller screens */
+  }
+
+  .fixed-input-area {
+    max-width: 90%; /* Make input area wider on smaller screens */
+  }
+}
+
+/* ... (Rest of your CSS) */
