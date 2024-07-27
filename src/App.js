@@ -18,9 +18,7 @@ function GroqApp() {
 
   const [streamingOutput, setStreamingOutput] = useState('');
   const hf = new HfInference();
-  hf.endpoint("https://groqapi.bababababanana.com");
-
-
+  
   const messageAreaRef = useRef(null);
   const chatAreaRef = useRef(null);
 
@@ -62,6 +60,7 @@ function GroqApp() {
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
+      recognition.lang = 'zh-CN';
 
       recognition.onstart = () => {
         setIsListening(true);
@@ -72,7 +71,7 @@ function GroqApp() {
 
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
-        console.log('Voice Input Transcript:', transcript);
+        console.log('onresult Voice Input Transcript:', transcript);
         sendToLLM(transcript);
       };
 
@@ -215,10 +214,10 @@ function GroqApp() {
       for await (const chunk of hf.chatCompletionStream({
         endpointUrl: "https://groqapi.bababababanana.com",
         messages: [
-            {role: 'system', content: 'This is a conversation between Bobby, a friendly chatbot. Bobby is helpful, kind and honest.'},
+            {role: 'system', content: 'This is a conversation between Bobby, a friendly chatbot. Bobby is helpful, kind and honest. You must keep response below 200 words or less. Summarize long responses  and ask for followup questions.'},
             { role: 'user', content: text }
         ],
-        max_tokens: 500,
+        max_tokens: 1500,
         temperature: 0.1,
         seed: 0,
       })) {
