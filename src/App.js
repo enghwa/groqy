@@ -206,7 +206,10 @@ function GroqApp() {
 
       for await (const chunk of hf.chatCompletionStream({
         endpointUrl: "https://groqapi.bababababanana.com",
-        messages: [{ role: 'user', content: text }],
+        messages: [
+            {role: 'system', content: 'This is a conversation between Bobby, a friendly chatbot. Bobby is helpful, kind and honest.'},
+            { role: 'user', content: text }
+        ],
         max_tokens: 500,
         temperature: 0.1,
         seed: 0,
