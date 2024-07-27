@@ -5,29 +5,41 @@
   width: 600px; 
   margin: 20px auto; 
   font-family: sans-serif;
-  box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1); 
+  /* box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);  */
 }
 
 .chat-area {
   display: flex;
   flex-direction: column;
-  flex: 1; /* Take up available space */
+  flex: 1; 
+}
+
+.fixed-input-area {
+  position: fixed; /* Make it fixed to the viewport */
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  padding: 10px;
+  border-top: 1px solid #eee; 
+  background-color: #fff; /* Make sure the input area has a background color */
+  z-index: 1;  /* Make sure it stays on top of the chat area */
 }
 
 .message-area {
   flex: 1; 
   padding: 20px;
   overflow-y: auto; 
+  height: calc(100vh - 50px); /* Account for input area height */
   display: flex;
-  flex-direction: column-reverse; 
+  flex-direction: column; /* Normal column direction */
 }
 
 .input-area {
   padding: 10px;
   border-top: 1px solid #eee; 
-  position: relative; /* Position the input area */
-  bottom: 0; /* Fix it to the bottom */
-  width: 100%; /* Make it take the full width */
+  position: relative; 
+  bottom: 0; 
+  width: 100%; 
 }
 .input-container {
   display: flex;
@@ -57,27 +69,26 @@
 }
 
 .microphone-icon.recording {
-  background-color: #f0544f; /* Orange when recording */
+  background-color: #f0544f; 
 }
 
 .recording-time {
-  margin-left: 5px; /* Reduced margin */
-  font-size: 14px; /* Slightly smaller font size */
+  margin-left: 5px; 
+  font-size: 14px; 
   color: #f0544f;
 }
 
 input[type='text'] {
-  flex: 1; /* Input takes available space */
+  flex: 1; 
   border: none;
   padding: 8px;
   font-size: 1em;
 }
 
 #analyzer {
-  width: 100px; /* Adjust width as needed */
+  width: 100px;
   margin-left: 5px; 
 }
-
 
 button {
   background: none;
@@ -98,15 +109,6 @@ button {
   color: #f0544f; 
 }
 
-
-.message-area {
-  flex: 1;
-  padding: 20px;
-  overflow-y: auto;
-  display: flex; 
-  flex-direction: column; 
-}
-
 .message {
   margin-bottom: 10px; 
   padding: 10px 15px; 
@@ -117,21 +119,10 @@ button {
 .user-bubble {
   background-color: #e9ecef; 
   align-self: flex-end; 
-  font-family: 'Tiempos', serif; /* Apply Tiempos font */
 }
 
 .llm-bubble {
   background-color: #f0544f;
-  color: white;
-  align-self: flex-start; 
-}
-.user-message {
-  background-color: #e9ecef; 
-  align-self: flex-end;
-}
-
-.bot-message {
-  background-color: #f0544f; 
   color: white;
   align-self: flex-start; 
 }

@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import './App.css';
 import { HfInference } from '@huggingface/inference';
-
-import ReactMarkdown from 'react-markdown'; // Correct import
+import ReactMarkdown from 'react-markdown'; 
 
 function GroqApp() {
   const [textInput, setTextInput] = useState('');
   const [messages, setMessages] = useState([]);
-  const [tokensPerSecond, setTokensPerSecond] = useState(0); // Placeholder
+  const [tokensPerSecond, setTokensPerSecond] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
 
@@ -17,10 +16,17 @@ function GroqApp() {
   const recordingTimeRef = useRef(null);
 
   const [streamingOutput, setStreamingOutput] = useState('');
-  const hf = new HfInference(); //
-  hf.endpoint("https://groqapi.bababababanana.com")
-  // const model = hf.endpoint(apiUrl("/v1/chat/completions"));
+  const hf = new HfInference(); 
+  hf.endpoint("https://groqapi.bababababanana.com");
 
+
+  const messageAreaRef = useRef(null);
+  useEffect(() => {
+    // Scroll to the bottom whenever messages update
+    if (messageAreaRef.current) {
+      messageAreaRef.current.scrollTop = messageAreaRef.current.scrollHeight;
+    }
+  }, [messages]);
 
   useEffect(() => {
     return () => {
@@ -30,8 +36,8 @@ function GroqApp() {
   }, []);
 
   const handleClearChat = () => {
-    setMessages([]); // Clear the messages array
-    setStreamingOutput(''); // Clear any ongoing streaming output
+    setMessages([]);
+    setStreamingOutput('');
   };
 
   const formatTime = (seconds) => {
@@ -55,9 +61,8 @@ function GroqApp() {
       recognition.onresult = (event) => {
         const transcript = event.results[0][0].transcript;
         console.log('Voice Input Transcript:', transcript);
-        sendToLLM(transcript); // Send voice input directly to LLM
+        sendToLLM(transcript); 
       };
-
 
       recognition.onend = () => {
         stopListening();
@@ -75,12 +80,9 @@ function GroqApp() {
     stopRecordingTimer();
     stopAudioVisualization();
 
-    // Send the request to the LLM when recording stops
     if (textInput.trim() !== '') {
-      console.log("stopped")
       handleSend();
     }
-
   };
 
   const startRecordingTimer = () => {
@@ -121,7 +123,7 @@ function GroqApp() {
 
     analyserRef.current.getByteTimeDomainData(dataArray);
 
-    ctx.clearRect(0, 0, WIDTH, HEIGHT); // Clear the canvas
+    ctx.clearRect(0, 0, WIDTH, HEIGHT); 
     ctx.fillStyle = 'rgb(255, 255, 255)';
     ctx.fillRect(0, 0, WIDTH, HEIGHT);
 
@@ -165,7 +167,7 @@ function GroqApp() {
   const handleSend = () => {
     console.log('Keyboard Input:', textInput);
     sendToLLM(textInput);
-    setTextInput(''); // Clear input box after sending
+    setTextInput(''); 
   };
 
   const handleKeyDown = (e) => {
@@ -174,10 +176,7 @@ function GroqApp() {
     }
   };
 
-
   const sendToLLM = async (text) => {
-    //   console.log("sendtoLLM.....", text)
-
     const newMessage = {
       text: text,
       isUser: true 
@@ -186,13 +185,12 @@ function GroqApp() {
     setMessages(prevMessages => [...prevMessages, newMessage]);
 
     try {
-      // Create a placeholder for the LLM's response
       const responseMessageId = `llm-response-${messages.length}`;
       setMessages(prevMessages => [
         ...prevMessages,
         { 
           id: responseMessageId,
-          text: '', // Initially empty
+          text: '', 
           isUser: false 
         },
       ]);
@@ -206,7 +204,6 @@ function GroqApp() {
       })) {
         if (chunk.choices && chunk.choices.length > 0) {
           setMessages(prevMessages => {
-            // Find the LLM response message and update its text
             const updatedMessages = prevMessages.map(message => {
               if (message.id === responseMessageId) {
                 return {
@@ -222,69 +219,63 @@ function GroqApp() {
       }
     } catch (error) {
       console.error('Error with LLM API:', error);
-      // Consider setting an error message in the messages array
     }
   };
 
-
-
   return (
     <div className="app-container">
-
-  <div className="chat-area"> {/* Combined chat area */}
-      <div className="message-area">
-      {messages.map((message, index) => (
-        <div 
-          key={index} 
-          className={`message ${message.isUser ? 'user-bubble' : 'llm-bubble'}`}
-        >
-          {message.isUser 
-            ? message.text // Direct text for user messages
-            : <ReactMarkdown>{message.text}</ReactMarkdown> // Markdown for LLM
-          }
+      <div className="chat-area"> 
+      <div className="message-area" ref={messageAreaRef}>
+          {messages.map((message, index) => (
+            <div 
+              key={index} 
+              className={`message ${message.isUser ? 'user-bubble' : 'llm-bubble'}`}
+            >
+              {message.isUser 
+                ? message.text 
+                : <ReactMarkdown>{message.text}</ReactMarkdown> 
+              }
+            </div>
+          ))}
         </div>
-      ))}
-      </div>
 
-      <div className="input-area"> {/* Input area inside chat-area */}
-      <div className="input-container">
-          <div className="recording-controls">
-            <button onClick={isListening ? stopListening : startListening}>
-              <div
-                className={`microphone-icon ${isListening ? 'recording' : ''}`}
-              >
-                🎤
-              </div>
+      {/* Fixed Input Area */}
+    <div className="fixed-input-area"> 
+          <div className="input-container">
+            <div className="recording-controls">
+              <button onClick={isListening ? stopListening : startListening}>
+                <div
+                  className={`microphone-icon ${isListening ? 'recording' : ''}`}
+                >
+                  🎤
+                </div>
+              </button>
+              {isListening && (
+                <span className="recording-time">{formatTime(recordingTime)}</span>
+              )}
+              {isListening && <canvas id="analyzer" height="40"></canvas>}
+            </div>
+
+            <input
+              type="text"
+              value={textInput}
+              onChange={handleInputChange} 
+              onKeyDown={handleKeyDown} 
+              placeholder="Try it"
+            />
+            <button onClick={handleSend}>
+              <span role="img" aria-label="Send">
+                ✈️
+              </span>
             </button>
-            {isListening && (
-              <span className="recording-time">{formatTime(recordingTime)}</span>
-            )}
-            {isListening && <canvas id="analyzer" height="40"></canvas>}
           </div>
-
-          <input
-            type="text"
-            value={textInput}
-            onChange={handleInputChange} 
-            onKeyDown={handleKeyDown} 
-            placeholder="Try it"
-          />
-          <button onClick={handleSend}>
-            <span role="img" aria-label="Send">
-              ✈️
+          <div className="options">
+            <span onClick={handleClearChat} style={{ cursor: 'pointer' }}> 
+              Clear chat
             </span>
-          </button>
-
+          </div>
         </div>
-        <div className="options">
-          <span onClick={handleClearChat} style={{ cursor: 'pointer' }}> {/* Make it clickable */}
-            Clear chat
-          </span>
-
       </div>
-      </div>
-      </div>
-   
     </div>
   );
 }
