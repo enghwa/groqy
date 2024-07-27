@@ -1,21 +1,24 @@
 .app-container {
   display: flex;
   flex-direction: column;
-  height: 100vh; 
+  height: 80vh; 
   width: 600px; 
   margin: 20px auto; 
   font-family: sans-serif;
+  overflow-y: hidden; /* Prevent page scrolling */
   /* box-shadow: 0px 2px 5px rgba(0, 0, 0, 0.1);  */
 }
 
 .chat-area {
   display: flex;
   flex-direction: column;
-  flex: 1; 
+  /* flex: 1;  */
+  height: 100vh; /* Make chat area take full viewport height */
+  overflow-y: hidden; /* Prevent chat area scrolling */
 }
 
 .fixed-input-area {
-  position: fixed; /* Make it fixed to the viewport */
+  position: absolute; /* Position relative to parent (chat-area) */
   bottom: 0;
   left: 0;
   width: 100%;
