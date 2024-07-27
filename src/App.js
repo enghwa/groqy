@@ -9,6 +9,7 @@ function GroqApp() {
   const [tokensPerSecond, setTokensPerSecond] = useState(0);
   const [isListening, setIsListening] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
+  const [recognitionInstance, setRecognitionInstance] = useState(null);
 
   const audioContextRef = useRef(null);
   const analyserRef = useRef(null);
@@ -49,6 +50,14 @@ function GroqApp() {
     return `${minutes}:${remainingSeconds.toString().padStart(2, '0')}`;
   };
 
+  const toggleListening = () => {
+    if (isListening) {
+      stopListening();
+    } else {
+      startListening();
+    }
+  };
+
   const startListening = () => {
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -68,10 +77,13 @@ function GroqApp() {
       };
 
       recognition.onend = () => {
-        stopListening();
+        setIsListening(false);
+        stopRecordingTimer();
+        stopAudioVisualization();
       };
 
       recognition.start();
+      setRecognitionInstance(recognition);
 
     } else {
       alert('Speech recognition is not supported in your browser.');
@@ -79,12 +91,8 @@ function GroqApp() {
   };
 
   const stopListening = () => {
-    setIsListening(false);
-    stopRecordingTimer();
-    stopAudioVisualization();
-
-    if (textInput.trim() !== '') {
-      handleSend();
+    if (recognitionInstance) {
+      recognitionInstance.stop();
     }
   };
 
@@ -257,7 +265,7 @@ function GroqApp() {
           <div className={`input-container ${isListening ? 'recording' : ''}`}>
             <div className="recording-controls">
             <button 
-              onClick={isListening ? stopListening : startListening} 
+              onClick={toggleListening} 
               className={`microphone-button ${isListening ? 'recording' : ''}`}
             >
             <svg fill="#000000" width="800px" height="800px" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg"  className="feather feather-mic">
