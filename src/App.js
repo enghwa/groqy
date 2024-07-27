@@ -251,9 +251,12 @@ function GroqApp() {
 
         {/* Fixed Input Area */}
         <div className="fixed-input-area">
-          <div className="input-container">
+          <div className={`input-container ${isListening ? 'recording' : ''}`}>
             <div className="recording-controls">
-            <button onClick={isListening ? stopListening : startListening} className="microphone-button">
+            <button 
+              onClick={isListening ? stopListening : startListening} 
+              className={`microphone-button ${isListening ? 'recording' : ''}`}
+            >
             <svg fill="#000000" width="800px" height="800px" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg"  className="feather feather-mic">
               <path d="M128,172a52.059,52.059,0,0,0,52-52V64A52,52,0,0,0,76,64v56A52.059,52.059,0,0,0,128,172ZM100,64a28,28,0,0,1,56,0v56a28,28,0,0,1-56,0Zm40,147.21753V232a12,12,0,0,1-24,0V211.21753A92.13808,92.13808,0,0,1,36,120a12,12,0,0,1,24,0,68,68,0,0,0,136,0,12,12,0,0,1,24,0A92.13808,92.13808,0,0,1,140,211.21753Z"/>
             </svg>
@@ -283,12 +286,17 @@ function GroqApp() {
 
           </div>
           
-          <div className="options">
-          <span onClick={handleClearChat} style={{ cursor: 'pointer' }}> 
-            Clear chat
-          </span>
-        </div>
-
+          <div className={`options ${isListening ? 'recording' : ''}`}>
+            <button onClick={handleClearChat} className="clear-chat-button" aria-label="Clear chat">
+              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-trash-2">
+                <polyline points="3 6 5 6 21 6"></polyline>
+                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                <line x1="10" y1="11" x2="10" y2="17"></line>
+                <line x1="14" y1="11" x2="14" y2="17"></line>
+              </svg>
+              
+            </button>
+          </div>
         </div>
       
       
