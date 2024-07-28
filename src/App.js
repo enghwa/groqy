@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import './App.css';
 import { HfInference } from '@huggingface/inference';
 import ReactMarkdown from 'react-markdown';
+import * as tts from '@diffusionstudio/vits-web';
 
 function GroqApp() {
   const [textInput, setTextInput] = useState('');
@@ -10,7 +11,7 @@ function GroqApp() {
   const [isListening, setIsListening] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
   const [recognitionInstance, setRecognitionInstance] = useState(null);
-  const [contextMessages, setContextMessages] = useState([]);
+  const [contextMessages, setContextMessages] = ([]);
   const MAX_CONTEXT_MESSAGES = 45; // Adjust this number as needed
 
   const audioContextRef = useRef(null);
@@ -20,10 +21,15 @@ function GroqApp() {
 
   const [streamingOutput, setStreamingOutput] = useState('');
   const hf = new HfInference();
-  
+
   const messageAreaRef = useRef(null);
   const chatAreaRef = useRef(null);
 
+  const [isModelLoaded, setIsModelLoaded] = useState(false);
+  const [modelLoadingProgress, setModelLoadingProgress] = useState(0);
+  const [audioQueue, setAudioQueue] = useState([]);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const audioRef = useRef(new Audio());
 
   useEffect(() => {
     // Scroll to the bottom whenever messages update
@@ -38,6 +44,33 @@ function GroqApp() {
       stopListening();
     };
   }, []);
+
+  useEffect(() => {
+    const loadTTSModel = async () => {
+      try {
+        await tts.download('en_US-amy-low', (progress) => {
+          const percentLoaded = Math.round(progress.loaded * 100 / progress.total);
+          console.log(`Downloading ${progress.url} - ${percentLoaded}%`);
+          setModelLoadingProgress(percentLoaded);
+        });
+        setIsModelLoaded(true);
+      } catch (error) {
+        console.error('Error downloading TTS model:', error);
+      }
+    };
+
+    loadTTSModel();
+  }, []);
+
+  useEffect(() => {
+    if (audioQueue.length > 0) {
+      playNextAudio();
+    }
+  }, [audioQueue, isPlaying]);
+
+  // useEffect(() => {
+  //   console.log("audioQueue updated:", audioQueue); 
+  // }, [audioQueue]); 
 
   const handleClearChat = () => {
     setMessages([]);
@@ -199,9 +232,8 @@ function GroqApp() {
       return
     }
 
-    // Update messages and context
+
     setMessages(prevMessages => [...prevMessages, newMessage]);
-    updateContext(newMessage);
 
     try {
       const responseMessageId = `llm-response-${messages.length}`;
@@ -214,133 +246,182 @@ function GroqApp() {
         },
       ]);
 
-      // Prepare the context for the LLM request
-      const llmContext = [
-        {role: 'system', content: 'This is a conversation between Bobby, a friendly chatbot. Bobby is helpful, kind and honest. You must keep response below 200 words or less. Summarize long responses and ask for followup questions.'},
-        ...contextMessages.map(msg => ({
-          role: msg.isUser ? 'user' : 'assistant',
-          content: msg.text
-        })),
-        { role: 'user', content: text }
-      ];
+      let currentChunk = '';
 
       for await (const chunk of hf.chatCompletionStream({
         endpointUrl: "https://groqapi.bababababanana.com",
-        messages: llmContext,
+        messages: [
+          { role: 'system', content: 'This is a conversation between Bobby, a friendly chatbot. Bobby is helpful, kind and honest. You must keep response below 200 words or less. Summarize long responses  and ask for followup questions.' },
+          { role: 'user', content: text }
+        ],
         max_tokens: 1500,
         temperature: 0.1,
         seed: 0,
       })) {
         if (chunk.choices && chunk.choices.length > 0) {
+          const newContent = chunk.choices[0].delta.content || '';
+          currentChunk += newContent;
           setMessages(prevMessages => {
             const updatedMessages = prevMessages.map(message => {
               if (message.id === responseMessageId) {
                 return {
                   ...message,
-                  text: message.text + (chunk.choices[0].delta.content || '')
+                  text: message.text + newContent
                 };
               }
               return message;
             });
             return updatedMessages;
           });
+
+          // Check for sentence-ending punctuation
+          if (/[.!?，。]/.test(newContent)) {
+            const chunkToAdd = currentChunk; // Create a new variable with the current value
+            setAudioQueue(prevQueue => [...prevQueue, chunkToAdd]);
+            // console.log("currentChunk to audio Q> ", chunkToAdd)
+            // console.log("     >audioQ  ", audioQueue)
+            setIsPlaying(true);
+            currentChunk = '';
+          }
         }
       }
-
-      // Update context with the LLM's response
-      setMessages(prevMessages => {
-        const lastMessage = prevMessages[prevMessages.length - 1];
-        updateContext(lastMessage);
-        return prevMessages;
-      });
-
     } catch (error) {
       console.error('Error with LLM API:', error);
     }
   };
 
-  const updateContext = (newMessage) => {
-    setContextMessages(prevContext => {
-      const updatedContext = [...prevContext, newMessage];
-      if (updatedContext.length > MAX_CONTEXT_MESSAGES) {
-        return updatedContext.slice(-MAX_CONTEXT_MESSAGES);
-      }
-      return updatedContext;
-    });
+  const playNextAudio = async () => {
+    console.log("Entering playNextAudio  and len -> ", audioQueue.length)
+    // console.log("x:", audioQueue)
+    if (audioQueue.length === 0) {
+      // if (audioQueue.length === 0 || !isModelLoaded) {
+      setIsPlaying(false);
+      console.log("setIsPlaying false", audioQueue.length)
+      return;
+    }
+
+    setIsPlaying(true);
+
+    // Combine words into full sentences
+    let fullSentence = '';
+    let remainingQueue = [...audioQueue];
+    
+    // while (remainingQueue.length > 0) {
+    //   const chunk = remainingQueue[0];
+    //   console.log("playNextAudio chunk to play, QLen > ", chunk, remainingQueue.length)
+    //   fullSentence += chunk + ' ';
+    //   remainingQueue = remainingQueue.slice(1);
+    // }
+    const chunk = remainingQueue[0];
+    // console.log("playNextAudio chunk to play, QLen > ", chunk, remainingQueue.length)
+    fullSentence = chunk ;
+    remainingQueue = remainingQueue.slice(1);
+
+    setAudioQueue(remainingQueue);
+    // // Update the audio queue
+    // if (remainingQueue.length > 0) {
+    //     setAudioQueue(remainingQueue);
+    // } else {
+    //       setIsPlaying(false);
+    // }
+
+    
+    try {
+      console.log("tts>  ", fullSentence)
+      const wav = await tts.predict({
+        text: fullSentence.trim(),
+        voiceId: 'en_US-amy-low',
+      });
+      audioRef.current.src = URL.createObjectURL(wav);
+      // audioRef.current.onended = playNextAudio;
+      audioRef.current.play();
+      // playNextAudio();
+    } catch (error) {
+      console.error('Error generating audio:', error);
+      playNextAudio(); // Move to the next audio chunk if there's an error
+    }
   };
 
   return (
     <div className="app-container">
-      <div className="chat-area" ref={chatAreaRef}>
-      
-        <div className="message-area" ref={messageAreaRef}>
-          {messages.map((message, index) => (
-            <div
-              key={index}
-              className={`message ${message.isUser ? 'user-bubble' : 'llm-bubble'}`}
-            >
-              {message.isUser
-                ? message.text
-                : <ReactMarkdown>{message.text}</ReactMarkdown>
-              }
-            </div>
-          ))}
+      {!isModelLoaded ? (
+        <div className="loading-overlay">
+          <p>Loading TTS Model: {modelLoadingProgress}%</p>
         </div>
+      ) : (
+        <div className="chat-area" ref={chatAreaRef}>
+          <div className="message-area" ref={messageAreaRef}>
+            {messages.map((message, index) => (
+              <div
+                key={index}
+                className={`message ${message.isUser ? 'user-bubble' : 'llm-bubble'}`}
+              >
+                {message.isUser
+                  ? message.text
+                  : <ReactMarkdown>{message.text}</ReactMarkdown>
+                }
+              </div>
+            ))}
+          </div>
 
-        {/* Fixed Input Area */}
-        <div className="fixed-input-area">
-          <div className={`input-container ${isListening ? 'recording' : ''}`}>
-            <div className="recording-controls">
-            <button 
-              onClick={toggleListening} 
-              className={`microphone-button ${isListening ? 'recording' : ''}`}
-            >
-            <svg fill="#000000" width="800px" height="800px" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg"  className="feather feather-mic">
-              <path d="M128,172a52.059,52.059,0,0,0,52-52V64A52,52,0,0,0,76,64v56A52.059,52.059,0,0,0,128,172ZM100,64a28,28,0,0,1,56,0v56a28,28,0,0,1-56,0Zm40,147.21753V232a12,12,0,0,1-24,0V211.21753A92.13808,92.13808,0,0,1,36,120a12,12,0,0,1,24,0,68,68,0,0,0,136,0,12,12,0,0,1,24,0A92.13808,92.13808,0,0,1,140,211.21753Z"/>
-            </svg>
-          </button>
-          
+          {/* Fixed Input Area */}
+          <div className="fixed-input-area">
+            <div className={`input-container ${isListening ? 'recording' : ''}`}>
+              <div className="recording-controls">
+                <button
+                  onClick={toggleListening}
+                  className={`microphone-button ${isListening ? 'recording' : ''}`}
+                >
+                  <svg fill="#000000" width="800px" height="800px" viewBox="0 0 256 256" id="Flat" xmlns="http://www.w3.org/2000/svg" className="feather feather-mic">
+                    <path d="M128,172a52.059,52.059,0,0,0,52-52V64A52,52,0,0,0,76,64v56A52.059,52.059,0,0,0,128,172ZM100,64a28,28,0,0,1,56,0v56a28,28,0,0,1-56,0Zm40,147.21753V232a12,12,0,0,1-24,0V211.21753A92.13808,92.13808,0,0,1,36,120a12,12,0,0,1,24,0,68,68,0,0,0,136,0,12,12,0,0,1,24,0A92.13808,92.13808,0,0,1,140,211.21753Z" />
+                  </svg>
+                </button>
 
-              {isListening && (
-                <span className="recording-time">{formatTime(recordingTime)}</span>
-              )}
-              {isListening && <canvas id="analyzer" height="40"></canvas>}
+
+                {isListening && (
+                  <span className="recording-time">{formatTime(recordingTime)}</span>
+                )}
+                {isListening && <canvas id="analyzer" height="40"></canvas>}
+              </div>
+
+              <input
+                type="text"
+                value={textInput}
+                onChange={handleInputChange}
+                onKeyDown={handleKeyDown}
+                placeholder="Try it"
+              />
+              <button onClick={handleSend} className="send-button">
+
+                <svg aria-label="send" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960"
+                  className="feather feather-send"><path d="M120-160v-240l320-80-320-80v-240l760 320-760 320Z"></path>
+                </svg>
+
+              </button>
+
             </div>
 
-            <input
-              type="text"
-              value={textInput}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="Try it"
-            />
-            <button onClick={handleSend} className="send-button">
-            
-            <svg aria-label="send" role="img" xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 -960 960 960" 
-             className="feather feather-send"><path d="M120-160v-240l320-80-320-80v-240l760 320-760 320Z"></path>
-            </svg>
+            <div className={`options ${isListening ? 'recording' : ''}`}>
+              <button onClick={handleClearChat} className="clear-chat-button" aria-label="Clear chat">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-trash-2">
+                  <polyline points="3 6 5 6 21 6"></polyline>
+                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                  <line x1="10" y1="11" x2="10" y2="17"></line>
+                  <line x1="14" y1="11" x2="14" y2="17"></line>
+                </svg>
 
-          </button>
-
+              </button>
+            </div>
           </div>
-          
-          <div className={`options ${isListening ? 'recording' : ''}`}>
-            <button onClick={handleClearChat} className="clear-chat-button" aria-label="Clear chat">
-              <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="feather feather-trash-2">
-                <polyline points="3 6 5 6 21 6"></polyline>
-                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                <line x1="10" y1="11" x2="10" y2="17"></line>
-                <line x1="14" y1="11" x2="14" y2="17"></line>
-              </svg>
-              
+
+          <div className="audio-controls">
+            <button onClick={() => setAudioQueue([])} disabled={audioQueue.length === 0}>
+              {audioQueue.length}Stop Audio
             </button>
           </div>
         </div>
-      
-      
-      </div>
-    </div>
-  );
+      )};
+    </div>)
 }
 
 export default GroqApp;
