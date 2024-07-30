@@ -62,7 +62,7 @@ function GroqApp() {
     if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       const recognition = new SpeechRecognition();
-      recognition.lang = 'zh-CN';
+      recognition.lang =  'en-US'; //'zh-CN';
 
       recognition.onstart = () => {
         setIsListening(true);
